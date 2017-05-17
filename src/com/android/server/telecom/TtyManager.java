@@ -76,9 +76,7 @@ final class TtyManager implements WiredHeadsetManager.Listener {
         Log.v(this, "onWiredHeadsetPluggedInChanged");
         updateCurrentTtyMode();
 
-        boolean showNotification = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.HEADSET_PLUGGED_NOTIFICATION, 1) == 1;
-        if (newIsPluggedIn && showNotification) {
+        if (newIsPluggedIn) {
             showHeadSetPlugin();
         } else {
             cancelHeadSetPlugin();
@@ -133,13 +131,18 @@ final class TtyManager implements WiredHeadsetManager.Listener {
         String expandedText = mContext.getString(
                 R.string.headset_plugin_view_text);
 
-        Notification.Builder notification = new Notification.Builder(mContext)
-            .setSmallIcon(android.R.drawable.stat_sys_headset)
-            .setContentTitle(titleText)
-            .setContentText(expandedText)
-            .setTicker(titleText);
+        Notification notification = new Notification();
+        notification.icon = android.R.drawable.stat_sys_headset;
+        notification.flags |= Notification.FLAG_NO_CLEAR;
+        notification.tickerText = titleText;
 
-        mNotificationManager.notify(HEADSET_PLUGIN_NOTIFICATION, notification.build());
+        // create the target network operators settings intent
+        Intent intent = new Intent("android.intent.action.NO_ACTION");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pi = PendingIntent.getActivity(mContext, 0, intent, 0);
+
+        notification.setLatestEventInfo(mContext, titleText, expandedText, pi);
+        mNotificationManager.notify(HEADSET_PLUGIN_NOTIFICATION, notification);
     }
 
     void cancelHeadSetPlugin() {
